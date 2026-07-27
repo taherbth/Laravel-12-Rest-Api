@@ -73,7 +73,6 @@ class CustomerController extends Controller
             if (!empty($status) && $status !== 'all') {
                 $builder->where('status', (string) $status);
             }
-
             $customers = $builder->paginate($perPage);
 
             // 2. Transform the internal collection using CustomerResource
@@ -107,12 +106,11 @@ class CustomerController extends Controller
 
             return response()->json($customers);
         }catch (\Throwable $e) {
-            // This will force the real database error or PHP syntax error to print out
-            dd([
-                'Message' => $e->getMessage(),
-                'File' => $e->getFile(),
-                'Line' => $e->getLine(),
-            ]);
+            \Log::error('Meilisearch Scout Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Search operation failed',
+                'message' => $e->getMessage()
+            ], 500);
         }        
 
         
@@ -181,5 +179,20 @@ class CustomerController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function removeCustomer( Request $request )
+    {
+        if(!empty( $request->item_ids)){
+            Customer::destroy( $request->item_ids );
+            return response([
+                'message' => 'Customer deleted successfully!'
+            ],200);
+        }
     }
 }
