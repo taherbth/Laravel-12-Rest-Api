@@ -91,26 +91,26 @@ class CustomerRequest extends FormRequest
                 break;
 
             case 'PUT':
+                $customerId = $this->route('id') ?? $this->route('customer');
                 $rules = [];
-                $rules = array_merge($rules,['customer_no' => ['required', Rule::unique('customers')->where(function ($query) {
-                            $query->where('deleted_at', null);
-                            $query->where('id', '!=', $this->get('id'));
-                        })
+                $rules = array_merge($rules,['customer_no' => ['required', 
+                    Rule::unique('customers', 'customer_no')
+                        ->ignore($customerId)          // Ignore this customer record
+                        ->whereNull('deleted_at')      // Ignore soft-deleted records
                     ]
                 ]);
                 if($this->input('email')!=""){
-                    $rules = array_merge($rules,['email' => ['email', Rule::unique('customers')->where(function ($query) {
-                                $query->where('deleted_at', Null);
-                                $query->where('id', '!=', $this->get('id'));
-                            })
+                    $rules = array_merge($rules,['email' => ['email', 
+                        Rule::unique('customers', 'email')
+                            ->ignore($customerId)          // Ignore this customer record
+                            ->whereNull('deleted_at')      // Ignore soft-deleted records
                         ]
                     ]);
                 }
                 if($this->input('cell_phone')!=""){
-                    $rules = array_merge($rules,['cell_phone' => ['regex:/(01)[0-9]{9}$/', Rule::unique('customers')->where(function ($query) {
-                                $query->where('deleted_at', Null);
-                                $query->where('id', '!=', $this->get('id'));
-                            })
+                    $rules = array_merge($rules,['cell_phone' => ['regex:/(01)[0-9]{9}$/', Rule::unique('customers', 'cell_phone')
+                            ->ignore($customerId)          // Ignore this customer record
+                            ->whereNull('deleted_at')      // Ignore soft-deleted records
                         ]
                     ]);
                 }             
@@ -118,8 +118,12 @@ class CustomerRequest extends FormRequest
                 $rules = array_merge($rules,['last_name' => 'required|string|min:2|max:100']);
                 $rules = array_merge($rules,['gender_id' => 'required']);
                 $rules = array_merge($rules,['address' => 'required']);
+                $rules = array_merge($rules,['address2' => 'nullable|string']);
                 $rules = array_merge($rules,['city' => 'required']);
                 $rules = array_merge($rules,['country_id' => 'required']);
+                $rules = array_merge($rules,['zip' => 'nullable|string']);
+                $rules = array_merge($rules,['work_phone' => 'nullable|string']);
+                $rules = array_merge($rules,['date_of_birth' => 'nullable|date']);
                 return $rules;
                 break;               
         }

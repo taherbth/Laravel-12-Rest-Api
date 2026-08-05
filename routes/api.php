@@ -40,6 +40,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('products', ProductController::class);
         // Use plural naming conventions ('customers') for standard RESTful APIs
         Route::apiResource('customers', CustomerController::class);
+        Route::post('customers/remove_customer', [CustomerController::class, 'removeCustomer']);
     });
     
 });

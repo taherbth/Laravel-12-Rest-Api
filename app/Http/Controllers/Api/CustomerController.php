@@ -67,7 +67,8 @@ class CustomerController extends Controller
             $sortOrder = $request->input('sort_order', 'desc') === 'asc' ? 'asc' : 'desc';
 
             // Initialize Scout Search
-            $builder = Customer::search($search ?? '');
+            $builder = Customer::search($search ?? '')
+                ->query(fn ($query) => $query->whereNull('deleted_at'));
 
             // Filter by status if provided and not 'all'
             if (!empty($status) && $status !== 'all') {
@@ -104,15 +105,16 @@ class CustomerController extends Controller
             $customers = $query->orderBy('created_at', $sortOrder)
                                ->paginate($perPage);
 
-            return response()->json($customers);
+            return $this->sendResponse($customers, 'Customers retrieved.');
+
         }catch (\Throwable $e) {
             \Log::error('Meilisearch Scout Error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Search operation failed',
                 'message' => $e->getMessage()
             ], 500);
-        }        
 
+        }  
         
     }
     /**
@@ -141,10 +143,10 @@ class CustomerController extends Controller
         $customer_created = Customer::create($request->validated());
         if ($customer_created) {
             // 2. Wrap the new customer model inside the resource
-            return $this->sendResponse(new CustomerResource($customer_created), 'Customer Created successfully.', 201);
+            return $this->sendResponse(new CustomerResource($customer_created), 'Customer created successfully.', 201);
         } else {
             return response()->json([
-                'message' => 'Error: Customer Not Created, Please Try again'
+                'message' => 'Error: Customer not created, Please try again'
             ], 500);
         }          
         
@@ -152,9 +154,24 @@ class CustomerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    /**
+     * Display the specified customer.
+     */
+    public function show($id): JsonResponse
     {
-        //
+        $customer = Customer::find($id);
+
+        if (!$customer) {
+            return response()->json([
+                'status' => 404,
+                'message' => 'Customer not found.'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 200,
+            'data'   => $customer
+        ], 200);
     }
 
     /**
@@ -162,15 +179,30 @@ class CustomerController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        echo "Hello === ".$id;
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
-    {
-        //
+    public function update(CustomerRequest $request , string $id): JsonResponse
+    {      
+        $customer = Customer::find($id);
+        if (!$customer) {
+            return response()->json([
+                'message' => 'Error: Customer not found.'
+            ], 404);
+        }
+
+        $customer_updated = $customer->update($request->validated());
+        if ($customer_updated) {
+            // 2. Wrap the new customer model inside the resource
+            return $this->sendResponse(new CustomerResource($customer), 'Customer updated successfully.', 201);
+        } else {
+            return response()->json([
+                'message' => 'Error: Unable to update customer, Please Try again.'
+            ], 500);
+        }
     }
 
     /**
@@ -186,13 +218,23 @@ class CustomerController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function removeCustomer( Request $request )
-    {
-        if(!empty( $request->item_ids)){
-            Customer::destroy( $request->item_ids );
-            return response([
-                'message' => 'Customer deleted successfully!'
-            ],200);
+    public function removeCustomer( Request $request ) : JsonResponse
+    {   
+        $itemIds = $request->input('item_ids');
+        
+        // Safely check if the array is empty
+        if (empty($itemIds) || !is_array($itemIds)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No items selected for deletion.'.$itemIds
+            ], 400); // 400 Bad Request
         }
+
+        Customer::whereIn('id', $itemIds)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer(s) deleted successfully.'
+        ]);
     }
 }
