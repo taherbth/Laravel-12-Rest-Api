@@ -31,16 +31,23 @@ use App\Http\Controllers\Api\CustomerController;
 // Wrap all endpoints in a 'v1' prefix group
 Route::prefix('v1')->group(function () {
     // Public Routes
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::get('/common-resources', [CommonResourcesController::class, 'getCommonResources']);
-
+    // Strict throttle for auth endpoints (5 requests/min)
+    Route::middleware('throttle:login')->group(function () {
+        Route::post('register', [AuthController::class, 'register']);
+        Route::post('login', [AuthController::class, 'login']);    
+    });
+    // Public resources throttle (30 requests/min)
+    Route::middleware('throttle:public-resources')->group(function () {
+        Route::get('/common-resources', [CommonResourcesController::class, 'getCommonResources']);
+    });
     // Protected CRUD Routes
-    Route::middleware('auth:api')->group(function () {
+    Route::middleware('auth:api', 'throttle:api-user')->group(function () {
         Route::apiResource('products', ProductController::class);
-        // Use plural naming conventions ('customers') for standard RESTful APIs
         Route::apiResource('customers', CustomerController::class);
         Route::post('customers/remove_customer', [CustomerController::class, 'removeCustomer']);
-    });
-    
+    });    
+    Route::middleware(['auth:api', 'throttle:subscription-tier'])->group(function () {
+        Route::apiResource('products', ProductController::class);
+        Route::apiResource('customers', CustomerController::class);
+    });    
 });
