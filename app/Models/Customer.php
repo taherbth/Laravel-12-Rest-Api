@@ -2,12 +2,13 @@
 
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory; // 1. Import trait
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
 
 class Customer extends Model
 {
-    use Searchable, SoftDeletes;
+    use HasFactory, Searchable, SoftDeletes;
     protected $table = 'customers';
 
     protected $fillable = ['gender_id', 'country_id', 'customer_no', 'first_name', 'last_name', 'cell_phone',

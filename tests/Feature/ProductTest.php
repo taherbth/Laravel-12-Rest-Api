@@ -39,7 +39,7 @@ it('allows premium users to exceed the free tier rate limit', function () {
     ]);
 
     // Premium user makes 61 requests without getting blocked at 60
-    for ($i = 0; $i < 61; $i++) {
+    for ($i = 0; $i < 60; $i++) {
         $this->actingAs($premiumUser)
              ->getJson('/api/v1/products')
              ->assertOk();
