@@ -140,7 +140,43 @@ it('can update an existing customer', function () {
 it('can delete an existing customer', function () {
     $user = User::factory()->create();
     // Create the customer directly in the DB first so we have something to update
-    $customer = Customer::factory()->create(
+    $customerA = Customer::factory()->create(
+        [
+            'customer_no' => '00525',
+            'first_name'  => 'Test first name',
+            'last_name' => 'Test last name',
+            'gender_id' => 1,
+            'address' => 'test address',
+            'city' => 'Dhaka',
+            'country_id' => 23
+
+        ]);
+
+    $customerB = Customer::factory()->create();    
+
+    $response = $this->actingAs($user)
+        ->postJson("/api/v1/customers/remove_customer", 
+        [
+            'item_ids' => [$customerA->id, $customerB->id],
+        ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'success' => true,
+            'message' => 'Customer(s) deleted successfully.',
+        ]);
+
+    // Verify soft deletion or database state
+    $this->assertSoftDeleted($customerA);
+    $this->assertSoftDeleted($customerB);
+
+    // Note: If your application uses hard deletes instead of soft deletes, replace $this->assertSoftDeleted($customerA) with $this->assertDatabaseMissing('customers', ['id' => $customerA->id]).
+});
+
+it('can delete : returns a 400 error when item_ids is empty or not an array', function (mixed $invalidItemIds) {
+    $user = User::factory()->create();
+
+    $customerA = Customer::factory()->create(
         [
             'customer_no' => '00525',
             'first_name'  => 'Test first name',
@@ -153,15 +189,20 @@ it('can delete an existing customer', function () {
         ]);
 
     $response = $this->actingAs($user)
-        ->deleteJson("/api/v1/customers/{$customer->id}");
+        ->postJson("/api/v1/customers/remove_customer", 
+        [
+            'item_ids' => $invalidItemIds,
+        ]);
 
-    $response->assertJsonPath('data.full_name', 'Customer deleted');
-    // Assertion 3: CRITICAL for Delete tests! 
-    // Check the database to make sure it's actually gone.
-    // Below code is used if don't use soft delete
-    // $this->assertDatabaseMissing('products', [
-    //     'id' => $product->id
-    // ]);
-    // Below code is used if  use soft delete
-    $this->assertSoftDeleted($customer);
-});
+    $response->assertStatus(400)
+        ->assertJson([
+            'success' => false,
+            'message' => 'No items selected for deletion.',
+        ]);
+})->with([
+    'empty array' => [[]],
+    'null value'  => [null],
+    'string'      => ['invalid-id'],
+    'integer'     => [123],
+]);
+
