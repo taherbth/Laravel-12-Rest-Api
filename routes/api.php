@@ -6,8 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CommonResourcesController;
 use App\Http\Controllers\Api\CustomerController;
-
-
+use App\Http\Controllers\Api\GalleryController;
+use App\Http\Controllers\Api\GalleryMediaController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -49,5 +49,14 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:api', 'throttle:subscription-tier'])->group(function () {
         Route::apiResource('products', ProductController::class);
         Route::apiResource('customers', CustomerController::class);
+
+        // 1. Core Gallery Resource (Handles index, store, destroy, etc.)
+        Route::apiResource('galleries', GalleryController::class);
+
+        // 2. Nested Media Resource (Handles attaching media to a gallery and deleting media)
+        Route::apiResource('galleries.media', GalleryMediaController::class)->only(['store', 'destroy']);
     });    
 });
+
+
+ 

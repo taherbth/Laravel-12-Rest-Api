@@ -43,7 +43,7 @@ class CustomerController extends Controller
      */
     public function store(CustomerRequest $request ): JsonResponse
     {                 
-       $customer = $this->customerService->createCustomer($request->validated());
+        $customer = $this->customerService->createCustomer($request->validated());
 
         if($customer) {
             return $this->sendResponse(new CustomerResource($customer), 'Customer created successfully.', 201);
