@@ -4,6 +4,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Gallery;
 use App\Services\MediaUploadService;
 use Illuminate\Http\Request;
+use App\Http\Requests\GalleryRequest;
+
 
 class GalleryController extends Controller
 {
@@ -12,15 +14,9 @@ class GalleryController extends Controller
         return response()->json(Gallery::with('media')->latest()->get());
     }
 
-    public function store(Request $request, MediaUploadService $uploadService)
+    public function store(GalleryRequest $request, MediaUploadService $uploadService)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'cover_photo' => 'required|image|max:5120',
-            'files' => 'nullable|array',
-            'files.*' => 'file|max:10240',
-        ]);
+        $validated = $request->validated();
 
         $gallery = $uploadService->createGalleryWithFiles(
             $validated,
