@@ -20,6 +20,6 @@ class Gallery extends Model
 
     public function getCoverPhotoUrlAttribute(): ?string
     {
-        return $this->cover_photo ? Storage::disk('public')->url($this->cover_photo) : null;
+        return $this->cover_photo ? asset('storage/' . $this->cover_photo) : null;
     }
 }

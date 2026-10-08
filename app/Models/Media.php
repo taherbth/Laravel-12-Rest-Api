@@ -20,6 +20,7 @@ class Media extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::disk('public')->url($this->file_path);
+        return $this->file_path ? asset('storage/'.$this->file_path) : null;
     }
 }
+

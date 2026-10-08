@@ -18,9 +18,14 @@ class GalleryController extends Controller
     {
         $this->uploadService = $uploadService;
     }
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Gallery::with('media')->latest()->get());
+        // return response()->json(Gallery::with('media')->latest()->get());
+        $query = Gallery::with('media');
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%' . $request->search . '%');
+        }
+        return response()->json($query->latest()->paginate($request->get('per_page', 12)));
     }
 
     public function store(GalleryRequest $request) : JsonResponse
@@ -32,12 +37,6 @@ class GalleryController extends Controller
             $request->file('cover_photo'),
             $request->file('files', [])
         );
-
-        // return response()->json([
-        //     'message' => 'Gallery created successfully',
-        //     'data' => $gallery->load('media'),
-        // ], 201);
-
         if($gallery) {
             // Eager-load media relation if needed
             $gallery->load('media');
@@ -59,5 +58,9 @@ class GalleryController extends Controller
         $gallery->delete();
 
         return response()->json(['message' => 'Gallery deleted successfully']);
+    }
+    public function show(Gallery $gallery)
+    {
+        return response()->json($gallery->load('media'));
     }
 }
